@@ -15,6 +15,13 @@ p2 = -100
 
 turn_num = 0
 
+image = simplegui.load_image("http://e.hiphotos.baidu.com/album/w%3D2048/sign=607b2e9f8cb1cb133e693b13e96c574e/f9dcd100baa1cd1126583750b812c8fcc2ce2dd7.jpg")
+
+# Image dimensions
+MAP_WIDTH = 680
+MAP_HEIGHT = 1020
+
+
 # helper function to initialize globals
 def init():
     global exposed, card_deck, state, p1, p2, paired, turn_num
@@ -49,7 +56,8 @@ def mouseclick(pos):
         p1 = card_index
         
     else:
-        turn_num += 1
+        if len(paired) != len(card_deck):
+            turn_num += 1
         if card_deck[p1] == card_deck[p2] and p1 != p2:
             exposed[p1] = True
             exposed[p2] = True
@@ -72,7 +80,7 @@ def mouseclick(pos):
                     
 # cards are logically 50x100 pixels in size    
 def draw(c):
-    global turn_num
+    global turn_num, image
     i = 0
     for n in card_deck:
         if True == exposed[i]:
@@ -83,6 +91,12 @@ def draw(c):
         i += 1
         
     label.set_text("Moves = " + str(turn_num))
+    if len(paired) == len(card_deck):
+        c.draw_image(image, 
+            [680 // 2, 1020 // 2 - 50], [600, 100], 
+            [400, 50], [800, 100])
+        c.draw_text("Congratulation, you have a perfect memory!",[30,60], 35, "Red")
+    
 
 
 # create frame and add a button and labels
