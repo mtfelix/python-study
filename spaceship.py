@@ -114,6 +114,7 @@ class Ship:
         else:
             self.image_center = THRUSTER_SHIP_POS
         
+        # screen wind
         self.pos[0] %= WIDTH
         self.pos[1] %= HEIGHT
         
@@ -174,6 +175,9 @@ class Sprite:
             sound.play()
    
     def draw(self, canvas):
+        # screen wind
+        self.pos[0] %= WIDTH
+        self.pos[1] %= HEIGHT
         canvas.draw_image(self.image, self.image_center, self.image_size, self.pos, self.image_size, self.angle)
     
     def update(self):
@@ -218,8 +222,6 @@ def draw(canvas):
 # timer handler that spawns a rock    
 def rock_spawner():
     global a_rock
-    
-
     x = random.randrange(0, WIDTH)
     y = random.randrange(0, HEIGHT)
     vx = random.randrange(0, 10)/5 - 1
