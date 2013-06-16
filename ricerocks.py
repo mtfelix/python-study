@@ -66,7 +66,8 @@ asteroid_info = ImageInfo([45, 45], [90, 90], 40, 1200)
 asteroid_image = simplegui.load_image("http://commondatastorage.googleapis.com/codeskulptor-assets/lathrop/asteroid_blue.png")
 
 # animated explosion - explosion_orange.png, explosion_blue.png, explosion_blue2.png, explosion_alpha.png
-explosion_info = ImageInfo([64, 64], [128, 128], 17, 24, True)
+# def __init__(self, center, size, radius = 0, lifespan = None, animated = False):
+explosion_info = ImageInfo([64, 64], [128, 128], 17, 120, True)
 explosion_image = simplegui.load_image("http://commondatastorage.googleapis.com/codeskulptor-assets/lathrop/explosion_alpha.png")
 
 # sound assets purchased from sounddogs.com, please do not redistribute
@@ -86,8 +87,9 @@ THRUSTER_SHIP_POS = [45+90, 45]
 THRUST_SPEED = 3.618
 started = False
 
-rock_group = []
-missile_group = []
+rock_group = set([])
+missile_group = set([])
+explosion_group = set([])
 
 
 # helper functions to handle transformations
@@ -180,7 +182,7 @@ class Ship:
         missile_vel[0] = self.vel[0] + self.fwd_vector[0] * 10
         missile_vel[1] = self.vel[1] + self.fwd_vector[1] * 10
         a_missile = Sprite(missile_pos, missile_vel, 0, 0, missile_image, missile_info, missile_sound)
-        missile_group.append(a_missile)
+        missile_group.add(a_missile)
         
         
     
@@ -198,6 +200,8 @@ class Sprite:
         self.lifespan = info.get_lifespan()
         self.animated = info.get_animated()
         self.age = 0
+        
+        self.sound = sound
         if sound:
             sound.rewind()
             sound.play()
@@ -206,6 +210,10 @@ class Sprite:
         
         self.pos[0] %= WIDTH
         self.pos[1] %= HEIGHT
+        
+        if True == self.animated:
+            self.image_center[0] = 64 + (self.age) * 128
+            self.image_size = [64, 128]
         
         canvas.draw_image(self.image, self.image_center, self.image_size, self.pos, self.image_size, self.angle)
     
@@ -235,19 +243,27 @@ class Sprite:
             return False
 
 def group_collide(group, sprite_object):
-    num_of_collisions = 0;
+    global explosion_group
+    num_of_collisions = 0
+    remove_set = set([])
     for item in group:
         if True == item.collide(sprite_object):
-            group.remove(item)
+            remove_set.add(item)
             num_of_collisions += 1
+            explosion = Sprite(item.get_position(), [0,0], 0, 0, explosion_image, explosion_info, explosion_sound)
+            explosion_group.add(explosion)
+    group.difference_update(remove_set)
     return num_of_collisions
     
 def group_group_collide(group1, group2):
     num_of_collisions = 0
+    remove_set = set([])
     for p1 in group1:
         if group_collide(group2, p1) > 0:
             num_of_collisions += 1
-            group1.remove(p1)
+            #group1.remove(p1)
+            remove_set.add(p1)
+    group1.difference_update(remove_set)
     return num_of_collisions
 
 def draw(canvas):
@@ -273,8 +289,9 @@ def draw(canvas):
     
     #a_rock.update()
     #a_missile.update()
-    
-    process_sprite_group(rock_group+missile_group, canvas)
+    all_set = rock_group.union(missile_group)
+    all_set = all_set.union(explosion_group)
+    process_sprite_group(all_set, canvas)
     
     # show the results
     canvas.draw_text("Lives:"+str(lives), (10, 50), 40, "Red")
@@ -290,13 +307,13 @@ def draw(canvas):
         score = 0
         started = False
         restart()
-        canvas.draw_image(splash_image, splash_info.get_center(), splash_info.get_size(), [WIDTH / 2, HEIGHT / 2], [WIDTH, HEIGHT])
+        canvas.draw_image(splash_image, splash_info.get_center(), splash_info.get_size(), [WIDTH / 2, HEIGHT / 2], splash_info.get_size())
         
     
 def restart():
     global time, SHIP_ANGLE_VEL, missile_group, rock_group, my_ship, lives, score, ship_thrust_sound
-    missile_group = []
-    rock_group = []
+    missile_group = set([])
+    rock_group = set([])
     SHIP_ANGLE_VEL = 0
     score = 0
     ship_thrust_sound.rewind()
@@ -307,7 +324,7 @@ def rock_spawner():
     global rock_group, a_missile, started
     if False == started:
         return
-    print len(rock_group)
+    #print len(rock_group)
     if len(rock_group) < 12:
         x = random.randrange(0, WIDTH)
         y = random.randrange(0, HEIGHT)
@@ -319,7 +336,7 @@ def rock_spawner():
         ang = 0
         ang_vel = (random.randrange(0, 20)/5 - 2) * math.pi/30
         a_rock = Sprite(pos, [vx, vy], ang, ang_vel, asteroid_image, asteroid_info)
-        rock_group.append(a_rock)
+        rock_group.add(a_rock)
 
 def process_sprite_group(group, canvas):
     
@@ -329,7 +346,6 @@ def process_sprite_group(group, canvas):
             group.remove(item)
         else:
             item.draw(canvas)
-    
 
 def keydown(key):
     
